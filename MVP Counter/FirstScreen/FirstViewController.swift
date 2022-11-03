@@ -1,5 +1,6 @@
 import EasyAutolayout
 import UIKit
+import Combine
 
 protocol FirstViewProtocol: AnyObject {
     func updateLabel(text: String)
@@ -17,7 +18,14 @@ final class FirstViewController: UIViewController {
     private let counterLabel = UILabel()
     private let incrementButton = UIButton()
     private let decrementButton = UIButton()
+    private let multiplyButton = UIButton()
     private let showSecondViewButton = UIButton()
+    
+    private let incrementSubject = PassthroughSubject<Void, Never>()
+    private let decrementSubject = PassthroughSubject<Void, Never>()
+    private let multiplySubject = PassthroughSubject<Void, Never>()
+    private let showSecondScreenSubject = PassthroughSubject<Void, Never>()
+    private var cancellables: Set<AnyCancellable> = []
 
     // MARK: - Lifecycle
     
@@ -27,6 +35,8 @@ final class FirstViewController: UIViewController {
         setupConstraints()
         configureUI()
         setupBehavior()
+        setupBindings()
+        
     }
 
     // MARK: - Setups
@@ -35,12 +45,13 @@ final class FirstViewController: UIViewController {
         [counterLabel,
          incrementButton,
          decrementButton,
+         multiplyButton,
          showSecondViewButton].forEach { view.addSubview($0) }
     }
 
     private func setupConstraints() {
         counterLabel.pin
-            .width(to: 150)
+            .width(to: 250)
             .center(in: view)
 
         incrementButton.pin
@@ -52,10 +63,16 @@ final class FirstViewController: UIViewController {
             .size(to: CGSize(width: 120, height: 40))
             .below(of: incrementButton, offset: 30)
             .centerX(in: view)
+        
+        multiplyButton.pin
+            .size(to: CGSize(width: 120, height: 40))
+            .below(of: decrementButton, offset: 30)
+            .centerX(in: view)
+        
 
         showSecondViewButton.pin
             .size(to: CGSize(width: 120, height: 40))
-            .below(of: decrementButton, offset: 40)
+            .below(of: multiplyButton, offset: 40)
             .centerX(in: view)
     }
 
@@ -72,6 +89,9 @@ final class FirstViewController: UIViewController {
 
         decrementButton.backgroundColor = .systemGray
         decrementButton.setTitle("Decrement(-)", for: .normal)
+        
+        multiplyButton.backgroundColor = .systemGray
+        multiplyButton.setTitle("Multilly(X2)", for: .normal)
 
         showSecondViewButton.backgroundColor = .systemCyan
         showSecondViewButton.setTitle("Next screen", for: .normal)
@@ -80,21 +100,43 @@ final class FirstViewController: UIViewController {
     private func setupBehavior() {
         incrementButton.addTarget(self, action: #selector(incrementButtonDidTapped), for: .touchUpInside)
         decrementButton.addTarget(self, action: #selector(decrementButtonDidTapped), for: .touchUpInside)
+        multiplyButton.addTarget(self, action: #selector(multiplyButtonDidTapped), for: .touchUpInside)
         showSecondViewButton.addTarget(self, action: #selector(showSecondViewButtonDidTapped), for: .touchUpInside)
+    }
+    
+    private func setupBindings() {
+        incrementSubject.sink { [weak self] in
+            self?.presenter?.incrementCounter()
+        }.store(in: &cancellables)
+        
+        decrementSubject.sink { [weak self] in
+            self?.presenter?.decrementCounter()
+        }.store(in: &cancellables)
+        
+        multiplySubject.sink { [weak self] in
+            self?.presenter?.multiplyCounter()
+        }.store(in: &cancellables)
+        
+        showSecondScreenSubject.sink { [weak self] in
+            self?.presenter?.showSecondViewController()
+        }.store(in: &cancellables)
     }
 
     // MARK: - Helpers
     
     @objc private func incrementButtonDidTapped() {
-        presenter.incrementCounter()
+        incrementSubject.send()
     }
 
     @objc private func decrementButtonDidTapped() {
-        presenter.decrementCounter()
+        decrementSubject.send()
     }
-
+    
+    @objc private func multiplyButtonDidTapped() {
+        multiplySubject.send()
+    }
     @objc private func showSecondViewButtonDidTapped() {
-        presenter.showSecondViewController()
+        showSecondScreenSubject.send()
     }
 }
 

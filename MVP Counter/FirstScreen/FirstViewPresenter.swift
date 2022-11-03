@@ -4,6 +4,7 @@ protocol FirstViewPresenterProtocol {
     var counter: Int { get }
     func incrementCounter()
     func decrementCounter()
+    func multiplyCounter()
     func showSecondViewController()
 }
 
@@ -30,6 +31,10 @@ final class FirstViewPresenter: FirstViewPresenterProtocol {
 
     func decrementCounter() {
         counter -= 1
+        view.updateLabel(text: "\(counter)")
+    }
+    func multiplyCounter() {
+        counter *= 2
         view.updateLabel(text: "\(counter)")
     }
 
